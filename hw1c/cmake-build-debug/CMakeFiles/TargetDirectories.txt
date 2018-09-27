@@ -1,3 +1,0 @@
-/media/alfaix/Data/drive/мгту/тп/c-cpp/hw1c/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/media/alfaix/Data/drive/мгту/тп/c-cpp/hw1c/cmake-build-debug/CMakeFiles/edit_cache.dir
-/media/alfaix/Data/drive/мгту/тп/c-cpp/hw1c/cmake-build-debug/CMakeFiles/hw1c.dir
