@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/media/alfaix/Data/drive/мгту/тп/c-cpp/hw1c/main.c
+stdio.h
+-
+stdbool.h
+-
+string.h
+-
+malloc.h
+-
+
