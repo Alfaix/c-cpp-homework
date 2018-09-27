@@ -6,9 +6,11 @@
 
 void free_pptr(void ** pptr, size_t size)
 {
-  for (int i = 0; i < size; ++i)
-    free(pptr[i]);
-  free(pptr);
+  if (pptr != NULL) {
+    for (int i = 0; i < size; ++i)
+      free(pptr[i]);
+    free(pptr);
+  }
 }
 
 bool braces_closed(const char * const str){
