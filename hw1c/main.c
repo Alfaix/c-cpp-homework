@@ -56,6 +56,54 @@ int check_closed_braces(const char *const *const in_strings,
   return n_valid_strings;
 }
 
+int read_strings(char *** lines) {
+  assert(lines != NULL);
+  const int BUFFER_SIZE = 3000;
+  int x = 0;
+  char buffer[BUFFER_SIZE];
+  int n_lines = 0;
+  size_t symbols_read = 0;
+  void * realloc_buffer = NULL;
+
+
+  do {
+    x = getchar();
+    if (x == '\n' || x == EOF) {
+      ++n_lines;
+      realloc_buffer = realloc((*lines), n_lines * sizeof(char *));
+      if (realloc_buffer == NULL) {
+        free_pptr((void**)(*lines), (size_t)n_lines);
+        return -1;
+      }
+      *lines = realloc_buffer;
+      (*lines)[n_lines - 1] = malloc((symbols_read+1) * sizeof(char));
+      if ((*lines)[n_lines-1] == NULL){
+        free_pptr((void**)(*lines), (size_t)n_lines);
+        return -1;
+      }
+      buffer[symbols_read] = '\0';
+      strcpy((*lines)[n_lines - 1], buffer);
+      symbols_read = 0;
+    } else {
+      if (symbols_read == BUFFER_SIZE - 1) // buffer can't fit all of this
+      {
+        free_pptr((void**)(*lines), (size_t)n_lines);
+        return -1;
+      }
+      buffer[symbols_read] = (char)x; // should always be positive.. i think
+      ++symbols_read;
+    }
+  } while (x != EOF);
+
+  if (!feof(stdin)) // then the loop ended with an error
+  {
+    free_pptr((void**)(*lines), (size_t)n_lines);
+    return -1;
+  }
+
+  return n_lines;
+}
+
 int main() {
 /*
   // beware: quality debug code follows
@@ -75,52 +123,12 @@ int main() {
     printf("%s\n", valid_lines[i]);
 
 */
-  const int BUFFER_SIZE = 3000;
   char ** lines = NULL;
   char ** valid_lines = NULL;
-  int x = 0;
-  char buffer[BUFFER_SIZE];
   int n_valid_lines = 0;
-  size_t n_lines = 0;
-  size_t symbols_read = 0;
-  void * realloc_buffer = NULL;
-
-  do {
-    x = getchar();
-    if (x == '\n' || x == EOF) {
-      ++n_lines;
-      realloc_buffer = realloc(lines, n_lines * sizeof(char *));
-      if (realloc_buffer == NULL) {
-        printf("[error]");
-        free_pptr((void**)lines, n_lines);
-        return 0;
-      }
-      lines = realloc_buffer;
-      lines[n_lines - 1] = malloc((symbols_read+1) * sizeof(char));
-      if (lines[n_lines-1] == NULL){
-        printf("[error]");
-        free_pptr((void**)lines, n_lines);
-        return 0;
-      }
-      buffer[symbols_read] = '\0';
-      strcpy(lines[n_lines - 1], buffer);
-      symbols_read = 0;
-    } else {
-      if (symbols_read == BUFFER_SIZE - 1) // buffer can't fit all of this
-      {
-        printf("[error]");
-        free_pptr((void**)lines, n_lines);
-        return 0;
-      }
-      buffer[symbols_read] = (char)x; // should always be positive.. i think
-      ++symbols_read;
-    }
-  } while (x != EOF);
-
-  if (!feof(stdin)) // then the loop ended with an error
-  {
+  int n_lines = read_strings(&lines);
+  if (n_lines == -1) {
     printf("[error]");
-    free_pptr((void**)lines, n_lines);
     return 0;
   }
 
