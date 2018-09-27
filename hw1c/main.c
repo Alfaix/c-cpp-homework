@@ -144,7 +144,7 @@ int main() {
   if (n_valid_lines == -1) //valid_lines is freed in check_closed_braces
   {
     printf("[error]");
-    free_pptr((void**)lines, n_lines);
+    free_pptr((void**)lines, (size_t)n_lines);
     return 0;
   }
   for (int i = 0; i < n_valid_lines; ++i) {
