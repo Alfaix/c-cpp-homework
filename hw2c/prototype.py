@@ -11,7 +11,7 @@ functions = ('r') # all functions are unary
 dual_operators_to_functions = {'-':'r'} # like.. reverse?
 
 def priority(c):
-    return 1 if (c == '*' or c == '/') else 0
+    return 2 if c in functions else 1 if (c == '*' or c == '/') else 0
 
 def to_polish(expr):
     tokens = []
@@ -20,6 +20,8 @@ def to_polish(expr):
     reading_number = False
     first_digit = -1
     for i, c in enumerate(expr):
+        print("Tokens:", tokens)
+        print("Out:", out)
         if c.isdigit() or c == '.':
             if not reading_number:
                 reading_number = True
@@ -32,8 +34,9 @@ def to_polish(expr):
                 tokens.append(c) 
             elif (c in dual_operators_to_functions and (i == 0 or not expr[i-1].isdigit())): # function or unary minus
                 tokens.append(dual_operators_to_functions[c]) 
-            elif c in operations:
-                while tokens and tokens[-1] in operations 
+            elif c in operators:
+                while tokens and (tokens[-1] in operators \
+                             or tokens[-1] in dual_operators_to_functions.values()) \
                              and priority(c) <= priority(tokens[-1]):
                     out.append(tokens.pop())
                 tokens.append(c)
@@ -47,6 +50,8 @@ def to_polish(expr):
                     out.append(tokens.pop())
             else:
                 raise ValueError(f'Encountered something ({c}) that isn\'t 0-9+-*/()')
+    if reading_number:
+        out.append(float(expr[first_digit:]))
     while tokens:
         if tokens[-1] in '()':
             raise ValueError('Braces aren\'t closed')
