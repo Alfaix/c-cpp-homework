@@ -206,7 +206,7 @@ int to_reverse_polish_notation(const char * expression, token_t * polish_express
 {
   int n_tokens;
   for (int i = 0; i < size; ++i) {
-    
+
   }
 }
 

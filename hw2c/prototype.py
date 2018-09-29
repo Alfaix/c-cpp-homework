@@ -13,6 +13,9 @@ dual_operators_to_functions = {'-':'r'} # like.. reverse?
 def priority(c):
     return 2 if c in functions else 1 if (c == '*' or c == '/') else 0
 
+def check_valid(expr):
+    pass
+
 def to_polish(expr):
     tokens = []
     out = []
@@ -61,6 +64,8 @@ def to_polish(expr):
     return out
 
 def compute_polish(expr):
+    if not expr:
+        return
     tokens = []
     for i, c in enumerate(expr):
         if type(c) == float:
