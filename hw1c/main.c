@@ -24,8 +24,7 @@
 #include <malloc.h>
 #include <assert.h>
 
-void free_pptr(void ** pptr, size_t size)
-{
+void free_pptr(void ** pptr, size_t size) {
   if (pptr != NULL) {
     for (int i = 0; i < size; ++i)
       free(pptr[i]);
@@ -33,7 +32,7 @@ void free_pptr(void ** pptr, size_t size)
   }
 }
 
-bool braces_closed(const char * const str){
+bool braces_closed(const char * const str) {
   int braces_open = 0;
   size_t size = strlen(str);
   for (size_t i = 0; i < size; ++i) {
