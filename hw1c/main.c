@@ -1,4 +1,6 @@
-/* Задание А. Вариант 7.
+/*
+  Китов Арсен, АПО-11, ДЗ N1
+  Задание А. Вариант 7.
   Составить программу построчной обработки текста. Суть обработки - отбор строк, 
   содержащих одинаковое количество открывающих и закрывающих круглых скобок. 
 
@@ -17,7 +19,6 @@
   и завершать выполнение программы. 
 */
 
-
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -33,6 +34,7 @@ void free_pptr(void ** pptr, size_t size) {
 }
 
 bool braces_closed(const char * const str) {
+  assert(str != NULL);
   int braces_open = 0;
   size_t size = strlen(str);
   for (size_t i = 0; i < size; ++i) {
@@ -40,19 +42,23 @@ bool braces_closed(const char * const str) {
       ++braces_open;
     else if (str[i] == ')') {
       --braces_open;
-      if (braces_open < 0) // this invalidates )( , although I'm not sure that's how it should be
+      if (braces_open < 0) // эти 2 строчки запрещают конструкцию вида ")(", хотя в задании явно это не обозначено
         return false;
     }
   }
   return (bool) (braces_open == 0);
 }
 
+// это вообще нормальная практика возвращать -1 при ошибке? просто так делается во всяких getchar,
+// но разница в том, что getchar работает с char, который гарантированно помещается в int, а я работаю с
+// количеством строчек size_t, которое технически может не поместится в int
+// лучше использовать long int, использовать разные значения для ошибки и количества или оставить как есть?
 int check_closed_braces(const char *const *const in_strings,
                         char *** out_strings, size_t n_strings) {
   // pout_strings ---> out_strings outside of the function ---> array of pointers ---> actual string
-  assert(in_strings != NULL && out_strings != NULL);
+  assert(in_strings != NULL && out_strings != NULL); // внутренние указатели проверяются на NULL в braces_closed
   int n_valid_strings = 0;
-  void * realloc_buffer = NULL;
+  void * realloc_buffer = NULL; // нужен чтобы сохранить указатель, котороый надо почистить в случае неудачного realloc
   for (size_t i = 0; i < n_strings; ++i) {
     if (braces_closed(in_strings[i])) {
       n_valid_strings += 1;
@@ -80,6 +86,8 @@ int check_closed_braces(const char *const *const in_strings,
 int read_strings(char *** lines) {
   assert(lines != NULL);
   const int BUFFER_SIZE = 3000;
+  // почему-то под виндой с cl (vs 14.0) не работает, приходится писать #define BUFFER_SIZE вместо const int
+  // хотя в GCC все норм
   int x = 0;
   char buffer[BUFFER_SIZE];
   int n_lines = 0;
@@ -106,17 +114,17 @@ int read_strings(char *** lines) {
       strcpy((*lines)[n_lines - 1], buffer);
       symbols_read = 0;
     } else {
-      if (symbols_read == BUFFER_SIZE - 1) // buffer can't fit all of this
+      if (symbols_read == BUFFER_SIZE - 1) // если в буфер не помещается - почистить память и выбросить ошибку
       {
         free_pptr((void**)(*lines), (size_t)n_lines);
         return -1;
       }
-      buffer[symbols_read] = (char)x; // should always be positive.. i think
+      buffer[symbols_read] = (char)x; // по-моему гарантированно помещается в char, если больше нуля (т.е. ошибок нет)
       ++symbols_read;
     }
-  } while (x != EOF);
+  } while (!feof(stdin) && !ferror(stdin));
 
-  if (!feof(stdin)) // then the loop ended with an error
+  if (!feof(stdin)) // если прекращение цикла вызвала ошибка, а не конец файла - убрать за собой, вернуть ошибку
   {
     free_pptr((void**)(*lines), (size_t)n_lines);
     return -1;
@@ -126,24 +134,6 @@ int read_strings(char *** lines) {
 }
 
 int main() {
-/*
-  // beware: quality debug code follows
-  char ** lines = malloc(4*sizeof(char*));
-  lines[0] = malloc(6*sizeof(char));
-  lines[1] = malloc(10*sizeof(char));
-  lines[2] = malloc(9*sizeof(char));
-  lines[3] = malloc(9*sizeof(char));
-  strcpy(lines[0], "Hello()\0");
-  strcpy(lines[1], "((World))\0");
-  strcpy(lines[2], "(World))\0");
-  strcpy(lines[3], "((World)\0");
-  char ** valid_lines = NULL;
-  int k = check_closed_braces(lines, &valid_lines, 2);
-  printf("%d\n", k);
-  for (int i = 0; i < k; ++i)
-    printf("%s\n", valid_lines[i]);
-
-*/
   char ** lines = NULL;
   char ** valid_lines = NULL;
   int n_valid_lines = 0;
@@ -153,14 +143,13 @@ int main() {
     return 0;
   }
 
-  // actually even after some googling no idea what to do about this: this seems like a really dumb way to avoid
-  // the warning, making the function take non-const char** seems even dumber.. What's the right way?..
-  // I understand why it's wrong to do so (afaik, it allows to indirectly create a pointer with non-const
-  // value type, thus modifying a const object), but not sure of the workaround/right way to do this.
-  // send help.
-  n_valid_lines = check_closed_braces((const char *const *const)lines, &valid_lines, n_lines);
+  // вообще, мне осталось немного непонятно после лекции как именно надо делать передачу многоразовых поинтеров
+  // если передать char ** в const char * const * const, gcc ругается (насколько я понял, потому что существует способ
+  // изменить const объект); соответственно остается либо каст, как здесь, либо принимать char** без const, что странно
+  // просто cast сойдет?
+  n_valid_lines = check_closed_braces((const char *const *const)lines, &valid_lines, (size_t)n_lines);
 
-  if (n_valid_lines == -1) //valid_lines is freed in check_closed_braces
+  if (n_valid_lines == -1) //valid_lines гарантированно чистится в check_closed_braces
   {
     printf("[error]");
     free_pptr((void**)lines, (size_t)n_lines);
