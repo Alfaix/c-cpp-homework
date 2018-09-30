@@ -7,14 +7,56 @@ operation_lambdas = {
     }
 
 operators = ('-', '+', '*', '/')
-functions = ('r') # all functions are unary
+functions = ('r', ) # all functions are unary
 dual_operators_to_functions = {'-':'r'} # like.. reverse?
+valid_chars = operators + functions + (')', '(', '.')
 
 def priority(c):
     return 2 if c in functions else 1 if (c == '*' or c == '/') else 0
 
-def check_valid(expr):
-    pass
+def is_valid(expr):
+    if not expr: return False
+    if not expr[0].isdigit() and expr[0] not in dual_operators_to_functions \
+      and expr[0] not in functions and expr[0] != '(':
+        print("First symbol is not what it should be")
+        return False
+    braces = 0
+    dot_passed = False
+    for i, c in zip(range(1,len(expr)-1), expr[1:-1]):
+        if c not in valid_chars and not c.isdigit():
+                print(f"Invalid character at position {i}: {c}")
+                return False
+        elif c == '.':
+            if dot_passed or not expr[i-1].isdigit() or not expr[i+1].isdigit():
+                print(f"Invalid dot at position {i}: {c}")
+                return False
+            dot_passed = True
+        else:
+            if not c.isdigit():
+                dot_passed = False
+            if c in operators: # two operators in a row
+                if not expr[i-1].isdigit() and not expr[i-1] == ')': # operator can only follow a digit
+                    # if the previous symbol isn't a digit, then it has to be a function and previous symbol has to be (
+                    if c not in dual_operators_to_functions or (i != 0 and expr[i-1] != '('):
+                        print(f"An operator not after a non-digit at position {i}: {c}")
+                        return False
+                else:
+                    if expr[i-1] in operators or expr[i-1] in functions:
+                        print(f"An operator after a non-digit at position {i}: {c}")
+                        return False
+            elif c == '(':
+                braces += 1
+            elif c == ')':
+                braces -= 1
+                if braces < 0:
+                    print(f"Negative number of braces: closing brace at position {i}: {c}")
+                    return False
+
+    return braces == 0 and (expr[-1].isdigit() or expr[-1] == ')')
+
+
+
+
 
 def to_polish(expr):
     tokens = []
@@ -35,7 +77,8 @@ def to_polish(expr):
                 reading_number = False
             if c in functions:
                 tokens.append(c) 
-            elif (c in dual_operators_to_functions and (i == 0 or not expr[i-1].isdigit())): # function or unary minus
+            elif (c in dual_operators_to_functions and 
+                (i == 0 or not (expr[i-1].isdigit() or expr[i-1] == ')'))): # function or unary minus
                 tokens.append(dual_operators_to_functions[c]) 
             elif c in operators:
                 while tokens and (tokens[-1] in operators \
@@ -78,10 +121,11 @@ def compute_polish(expr):
             tokens.append(tmp)
         else:
             raise ValueError(f"Unexpected {c}")
-        print(tokens)
+        # print(tokens)
     return tokens[-1]
 
 if __name__ == '__main__':
     expr = input('Enter expression: ').replace(' ', '')
+    #assert is_valid(expr), "Expression is invalid!"
     print('Polish:', to_polish(expr))
     print("Solution:", compute_polish(to_polish(expr)))
