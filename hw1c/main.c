@@ -132,6 +132,7 @@ int main() {
   char ** valid_lines = NULL;
   size_t n_valid_lines = 0;
   size_t n_lines = 0;
+
   char ** lines = read_strings(&n_lines);
   if (lines == NULL) {
     printf("[error]");
@@ -139,16 +140,17 @@ int main() {
   }
 
   valid_lines = get_strings_with_closed_braces((const char *const *) lines, n_lines, &n_valid_lines);
-
   if (valid_lines == NULL)
   {
     printf("[error]");
     free_pptr((void**)lines, n_lines);
     return 0;
   }
+
   for (size_t i = 0; i < n_valid_lines; ++i) {
     printf("%s\n", valid_lines[i]);
   }
+  
   free_pptr((void**)lines, n_lines);
   free_pptr((void**)valid_lines, n_valid_lines);
 
