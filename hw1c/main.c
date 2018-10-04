@@ -56,6 +56,8 @@ char ** get_strings_with_closed_braces(const char *const *in_strings,
   size_t lines_allocated = 0;
   void * realloc_buffer = NULL;
   char ** out_strings = malloc(DEFAULT_N_LINES * sizeof(char *));
+  if (out_strings == NULL)
+    return NULL;
   *n_valid_strings = 0;
 
   for (size_t i = 0; i < n_strings; ++i) {
