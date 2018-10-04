@@ -19,11 +19,14 @@
   и завершать выполнение программы. 
 */
 
+// fixed 8 7 Q2 Q3 1
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
 #include <assert.h>
+
+#define DEFAULT_N_LINES 4
 
 void free_pptr(void ** pptr, size_t size) {
   if (pptr != NULL) {
@@ -36,120 +39,107 @@ void free_pptr(void ** pptr, size_t size) {
 bool braces_closed(const char * const str) {
   assert(str != NULL);
   int braces_open = 0;
-  size_t size = strlen(str);
-  for (size_t i = 0; i < size; ++i) {
-    if (str[i] == '(')
+  for (const char * i = str; *i != '\0'; ++i) {
+    if (*i == '(')
       ++braces_open;
-    else if (str[i] == ')') {
+    else if (*i == ')') {
       --braces_open;
-      if (braces_open < 0) // эти 2 строчки запрещают конструкцию вида ")(", хотя в задании явно это не обозначено
+      if (braces_open < 0)
         return false;
     }
   }
-  return (bool) (braces_open == 0);
+  return braces_open == 0;
 }
 
-// это вообще нормальная практика возвращать -1 при ошибке? просто так делается во всяких getchar,
-// но разница в том, что getchar работает с char, который гарантированно помещается в int, а я работаю с
-// количеством строчек size_t, которое технически может не поместится в int
-// лучше использовать long int, использовать разные значения для ошибки и количества или оставить как есть?
-int check_closed_braces(const char *const *const in_strings,
-                        char *** out_strings, size_t n_strings) {
-  // pout_strings ---> out_strings outside of the function ---> array of pointers ---> actual string
-  assert(in_strings != NULL && out_strings != NULL); // внутренние указатели проверяются на NULL в braces_closed
-  int n_valid_strings = 0;
-  void * realloc_buffer = NULL; // нужен чтобы сохранить указатель, котороый надо почистить в случае неудачного realloc
+char ** get_strings_with_closed_braces(const char *const *in_strings,
+                                       size_t n_strings, size_t *n_valid_strings) {
+  assert(in_strings != NULL && n_valid_strings != NULL);
+  size_t lines_allocated = 0;
+  void * realloc_buffer = NULL;
+  char ** out_strings = malloc(DEFAULT_N_LINES * sizeof(char *));
+  *n_valid_strings = 0;
+
   for (size_t i = 0; i < n_strings; ++i) {
     if (braces_closed(in_strings[i])) {
-      n_valid_strings += 1;
-
-      realloc_buffer = realloc(*out_strings, n_valid_strings * sizeof(char *));
-      if (realloc_buffer == NULL) {
-        free_pptr((void**)(*out_strings), (size_t)n_valid_strings);
-        return -1;
+      ++(*n_valid_strings);
+      if (*n_valid_strings == lines_allocated) {
+        lines_allocated += DEFAULT_N_LINES;
+        realloc_buffer = realloc(out_strings, lines_allocated * sizeof(char *));
+        if (realloc_buffer == NULL) {
+          free_pptr((void **) (*out_strings), (size_t) (*n_valid_strings));
+          return NULL;
+        }
+        out_strings = (char **) realloc_buffer;
       }
-      *out_strings = (char**)realloc_buffer;
-      (*out_strings)[n_valid_strings - 1] = malloc((strlen(in_strings[i]) + 1) * sizeof(char));
+      out_strings[*n_valid_strings - 1] = strdup(in_strings[i]);
 
-      if ((*out_strings)[n_valid_strings - 1] == NULL){
-        free_pptr((void**)(*out_strings), (size_t)n_valid_strings);
-        return -1;
+      if (out_strings[*n_valid_strings - 1] == NULL){
+        free_pptr((void**)out_strings, (size_t)(*n_valid_strings));
+        return NULL;
       }
-
-      strcpy((*out_strings)[n_valid_strings - 1], in_strings[i]);
     }
   }
 
-  return n_valid_strings;
+  if (lines_allocated != *n_valid_strings) { // то же, что и внизу
+    realloc_buffer = realloc(out_strings, *n_valid_strings * sizeof(char *));
+    if (realloc_buffer == NULL) {
+      free_pptr((void **) out_strings, *n_valid_strings);
+      return NULL;
+    }
+    out_strings = realloc_buffer;
+  }
+
+  return out_strings;
 }
 
-int read_strings(char *** lines) {
-  assert(lines != NULL);
-  const int BUFFER_SIZE = 3000;
-  // почему-то под виндой с cl (vs 14.0) не работает, приходится писать #define BUFFER_SIZE вместо const int
-  // хотя в GCC все норм
-  int x = 0;
-  char buffer[BUFFER_SIZE];
-  int n_lines = 0;
-  size_t symbols_read = 0;
+char ** read_strings(size_t * n_lines_read) {
+  assert(n_lines_read != NULL);
   void * realloc_buffer = NULL;
+  char ** lines = NULL;
+  size_t lines_allocated = DEFAULT_N_LINES;
+  *n_lines_read = 0;
+  lines = malloc(DEFAULT_N_LINES * sizeof(char *));
+  if (lines == NULL)
+    return NULL;
 
-
-  do {
-    x = getchar();
-    if (x == '\n' || x == EOF) {
-      ++n_lines;
-      realloc_buffer = realloc((*lines), n_lines * sizeof(char *));
+  while(scanf(" %m[^\n]", &(lines[*n_lines_read])) == 1) { // пробел в начале важен!
+    ++(*n_lines_read);
+    if (*n_lines_read == lines_allocated) {
+      lines_allocated += DEFAULT_N_LINES;
+      realloc_buffer = realloc(lines, lines_allocated * sizeof(char *));
       if (realloc_buffer == NULL) {
-        free_pptr((void**)(*lines), (size_t)n_lines);
-        return -1;
+        free_pptr((void **) lines, *n_lines_read); // n_lines_read == lines_allocated - DEFAULT_N_LINES
+        return NULL;
       }
-      *lines = realloc_buffer;
-      (*lines)[n_lines - 1] = malloc((symbols_read+1) * sizeof(char));
-      if ((*lines)[n_lines-1] == NULL){
-        free_pptr((void**)(*lines), (size_t)n_lines);
-        return -1;
-      }
-      buffer[symbols_read] = '\0';
-      strcpy((*lines)[n_lines - 1], buffer);
-      symbols_read = 0;
-    } else {
-      if (symbols_read == BUFFER_SIZE - 1) // если в буфер не помещается - почистить память и выбросить ошибку
-      {
-        free_pptr((void**)(*lines), (size_t)n_lines);
-        return -1;
-      }
-      buffer[symbols_read] = (char)x; // по-моему гарантированно помещается в char, если больше нуля (т.е. ошибок нет)
-      ++symbols_read;
+      lines = (char **)realloc_buffer;
     }
-  } while (!feof(stdin) && !ferror(stdin));
-
-  if (!feof(stdin)) // если прекращение цикла вызвала ошибка, а не конец файла - убрать за собой, вернуть ошибку
-  {
-    free_pptr((void**)(*lines), (size_t)n_lines);
-    return -1;
   }
 
-  return n_lines;
+  if (lines_allocated != *n_lines_read) { //realloc чтобы сократить неиспользуемую память (надо ли?)
+    realloc_buffer = realloc(lines, *n_lines_read * sizeof(char *));
+    if (realloc_buffer == NULL) {
+      free_pptr((void **) lines, *n_lines_read);
+      return NULL;
+    }
+    lines = realloc_buffer;
+  }
+
+  return lines;
 }
 
 int main() {
-  char ** lines = NULL;
   char ** valid_lines = NULL;
-  int n_valid_lines = 0;
-  int n_lines = read_strings(&lines);
-  if (n_lines == -1) {
+  size_t n_valid_lines = 0;
+  size_t n_lines = 0;
+  char ** lines = read_strings(&n_lines);
+  if (lines == NULL) {
     printf("[error]");
     return 0;
   }
 
-  // вообще, мне осталось немного непонятно после лекции как именно надо делать передачу многомерных поинтеров
-  // если передать char ** в const char * const * const, gcc ругается (насколько я понял, потому что существует способ
-  // изменить const объект); соответственно остается либо каст, как здесь, либо принимать char** без const, что странно
-  // просто cast сойдет?
-  n_valid_lines = check_closed_braces((const char *const *const)lines, &valid_lines, (size_t)n_lines);
+  valid_lines = get_strings_with_closed_braces((const char *const *) lines, (size_t) n_lines, &n_valid_lines);
 
-  if (n_valid_lines == -1) //valid_lines гарантированно чистится в check_closed_braces
+  if (valid_lines == NULL)
   {
     printf("[error]");
     free_pptr((void**)lines, (size_t)n_lines);
