@@ -136,19 +136,19 @@ int main() {
     return 0;
   }
 
-  valid_lines = get_strings_with_closed_braces((const char *const *) lines, (size_t) n_lines, &n_valid_lines);
+  valid_lines = get_strings_with_closed_braces((const char *const *) lines, n_lines, &n_valid_lines);
 
   if (valid_lines == NULL)
   {
     printf("[error]");
-    free_pptr((void**)lines, (size_t)n_lines);
+    free_pptr((void**)lines, n_lines);
     return 0;
   }
   for (size_t i = 0; i < n_valid_lines; ++i) {
     printf("%s\n", valid_lines[i]);
   }
-  free_pptr((void**)lines, (size_t)n_lines);
-  free_pptr((void**)valid_lines, (size_t)n_valid_lines);
+  free_pptr((void**)lines, n_lines);
+  free_pptr((void**)valid_lines, n_valid_lines);
 
 
   return 0;
