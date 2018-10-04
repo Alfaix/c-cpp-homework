@@ -19,7 +19,6 @@
   и завершать выполнение программы. 
 */
 
-// fixed 8 7 Q2 Q3 1
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -30,7 +29,7 @@
 
 void free_pptr(void ** pptr, size_t size) {
   if (pptr != NULL) {
-    for (int i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
       free(pptr[i]);
     free(pptr);
   }
@@ -145,7 +144,7 @@ int main() {
     free_pptr((void**)lines, (size_t)n_lines);
     return 0;
   }
-  for (int i = 0; i < n_valid_lines; ++i) {
+  for (size_t i = 0; i < n_valid_lines; ++i) {
     printf("%s\n", valid_lines[i]);
   }
   free_pptr((void**)lines, (size_t)n_lines);
