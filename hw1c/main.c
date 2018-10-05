@@ -50,7 +50,7 @@ bool braces_closed(const char * const str) {
   return braces_open == 0;
 }
 
-char ** get_strings_with_closed_braces(const char *const *in_strings,
+char ** get_strings_with_closed_braces(char *const *in_strings,
                                        size_t n_strings, size_t *n_valid_strings) {
   assert(in_strings != NULL && n_valid_strings != NULL);
   size_t lines_allocated = 0;
@@ -139,7 +139,7 @@ int main() {
     return 0;
   }
 
-  valid_lines = get_strings_with_closed_braces((const char *const *) lines, n_lines, &n_valid_lines);
+  valid_lines = get_strings_with_closed_braces(lines, n_lines, &n_valid_lines);
   if (valid_lines == NULL)
   {
     printf("[error]");
@@ -150,7 +150,7 @@ int main() {
   for (size_t i = 0; i < n_valid_lines; ++i) {
     printf("%s\n", valid_lines[i]);
   }
-  
+
   free_pptr((void**)lines, n_lines);
   free_pptr((void**)valid_lines, n_valid_lines);
 
